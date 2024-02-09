@@ -19,12 +19,15 @@ class ClientBackend {
   zmq::socket_t sub_socket_;
   zmq::socket_t req_socket_;
   const std::string name_;
+  bool stop_;
+  bool stopped_;
   std::queue<std::shared_ptr<std::tuple<const std::string, const std::string>>>* incoming_msgs_queue_;
   std::queue<std::shared_ptr<std::vector<std::string>>>* active_users_queue_;
 
  public:
   std::thread msg_subscription_thread_;
   std::thread heartbeat_thread_;
+  std::thread termination_thread_;
   ClientBackend(const std::string& name, const std::string& push_addr, const std::string& sub_addr,
                 const std::string& req_addr,
                 std::queue<std::shared_ptr<std::tuple<const std::string, const std::string>>>* received_messages_queue,
@@ -38,6 +41,9 @@ class ClientBackend {
   zmq::send_result_t SendHeartbeat();
 
   zmq::recv_result_t ReceiveActiveUsers();
+
+  bool IsStopped() const;
+  void Stop();
 };
 }  // namespace chat_app
 #endif  // CLIENT_BACKEND_HPP_

@@ -1,7 +1,7 @@
 QT += widgets
 
 SOURCES += src/messages.pb.cc
-SOURCES += src/utils.cpp src/client_frontend.cpp src/client_backend.cpp src/chat_client_app.cpp src/main_client.cpp
+SOURCES += src/utils.cpp src/client_frontend.cpp src/client_backend.cpp src/chat_client_controller.cpp src/main_client.cpp
 
 INCLUDEPATH+=include/
 

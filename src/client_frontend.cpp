@@ -12,8 +12,9 @@
 
 namespace chat_app {
 ClientFrontend::ClientFrontend(
-    std::queue<std::tuple<const std::string, const std::vector<std::string>>> *send_button_event_queue)
-    : QWidget(nullptr), event_queue_{send_button_event_queue} {
+    std::queue<std::tuple<const std::string, const std::vector<std::string>>> *send_button_event_queue,
+    std::queue<UserConnectAction> *connect_actions_queue)
+    : QWidget(nullptr), user_msg_queue_{send_button_event_queue}, connect_actions_queue_{connect_actions_queue} {
   SetupUI();
 }
 
@@ -57,12 +58,45 @@ void ClientFrontend::SetupUI() {
 
   // Button to send message
   send_button_ = new QPushButton("Send", this);
+  send_button_->setEnabled(false);
   connect(send_button_, &QPushButton::clicked, this, &ClientFrontend::SendButtonClicked);
   rightColumnLayout->addWidget(send_button_);
+
+  // Connect/Disconnect button
+  connect_button_ = new QPushButton("Connect", this);
+  connect(connect_button_, &QPushButton::clicked, this, &ClientFrontend::ConnectButtonClicked);
+  rightColumnLayout->addWidget(connect_button_);
+
+  // Connected indicator
+  connected_indicator_ = new QLabel("Disconnected", this);
+  connected_indicator_->setStyleSheet("QLabel { color: red; }");
+  rightColumnLayout->addWidget(connected_indicator_);
 
   mainLayout->addLayout(rightColumnLayout);
 
   setLayout(mainLayout);
+}
+
+void ClientFrontend::ConnectButtonClicked() {
+  if (connected_indicator_->text() == QString("Connected")) {
+    connect_actions_queue_->push(UserConnectAction::kDisconnect);
+  } else {
+    connect_actions_queue_->push(UserConnectAction::kConnect);
+  }
+}
+
+void ClientFrontend::SetConnectedStatus(const bool connected) {
+  if (connected) {
+    connected_indicator_->setText("Connected");
+    connected_indicator_->setStyleSheet("QLabel { color: green; }");
+    connect_button_->setText("Disconnect");
+    send_button_->setEnabled(true);
+  } else {
+    connected_indicator_->setText("Disconnected");
+    connected_indicator_->setStyleSheet("QLabel { color: red; }");
+    connect_button_->setText("Connect");
+    send_button_->setEnabled(false);
+  }
 }
 
 // When the user clicks on the Send button, this function:
@@ -78,7 +112,7 @@ void ClientFrontend::SendButtonClicked() {
     selectedUsers.push_back(item->text().toStdString());
   }
 
-  event_queue_->push(std::make_tuple(message.toStdString(), selectedUsers));
+  user_msg_queue_->push(std::make_tuple(message.toStdString(), selectedUsers));
   message_input_field_->clear();
 }
 

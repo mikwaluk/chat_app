@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 
-#include "chat_client_app.hpp"
+#include "chat_client_controller.hpp"
 #include "utils.hpp"
 
 namespace po = boost::program_options;
@@ -15,9 +15,11 @@ int main(int argc, char* argv[]) {
   std::string user_name;
   std::string server_port_to_subscribe;
   std::string heartbeat_port;
+  bool auto_connect;
   po::options_description desc("Allowed options");
   desc.add_options()("help,h", "produce help message")("user_name,u", po::value<std::string>(&user_name)->required(),
                                                        "Name of the user (required)")(
+      "auto_connect", po::value<bool>(&auto_connect)->default_value(false), "Client should connect automatically")(
       "server_address,a", po::value<std::string>(&server_host)->default_value("localhost"), "Server host address")(
       "push_port,p", po::value<std::string>(&server_port_to_push)->default_value("8000"),
       "Server port to push messages")("sub_port,s",
@@ -49,10 +51,9 @@ int main(int argc, char* argv[]) {
   const std::string full_server_req_address = std::string("tcp://") + server_host + std::string(":") + heartbeat_port;
 
   QApplication app(argc, argv);
-  // qRegisterMetaType<QItemSelection>("QItemSelection");
 
-  auto chat_controller =
-      chat_app::ChatClientApp(user_name, full_server_push_address, full_server_sub_address, full_server_req_address);
+  auto chat_controller = chat_app::ChatClientController(user_name, auto_connect, full_server_push_address,
+                                                        full_server_sub_address, full_server_req_address);
 
   return app.exec();
 }

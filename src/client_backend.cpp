@@ -23,6 +23,8 @@ ClientBackend::ClientBackend(
       sub_socket_{ctx_, zmq::socket_type::sub},
       req_socket_{ctx_, zmq::socket_type::req},
       name_{name},
+      stop_{false},
+      stopped_{false},
       incoming_msgs_queue_{received_messages_queue},
       active_users_queue_{active_users_queue} {
   push_socket_.connect(push_addr);
@@ -34,6 +36,17 @@ ClientBackend::ClientBackend(
   msg_subscription_thread_ = std::thread{&ClientBackend::ReceiveMessages, this};
   heartbeat_thread_ = std::thread{&ClientBackend::UpdateClientStatus, this};
 }
+
+void ClientBackend::Stop() {
+  std::cout << "Entering Stop\n";
+  stop_ = true;
+  msg_subscription_thread_.join();
+  heartbeat_thread_.join();
+  stopped_ = true;
+  std::cout << "Stopped ClientBackend - all looping threads have terminated\n";
+}
+
+bool ClientBackend::IsStopped() const { return stopped_; }
 
 // Sends the given text message to the given group of recipients.
 void ClientBackend::SendTextMessage(const std::string& text, const std::vector<std::string>& recipients) {
@@ -50,8 +63,8 @@ void ClientBackend::SendTextMessage(const std::string& text, const std::vector<s
 
 // Receives incoming text messages via the sub_socket_.
 void ClientBackend::ReceiveMessages() {
-  std::cout << "Start receiving...\n";
-  while (true) {
+  std::cout << "ClientBackend: enter ReceiveMessages...\n";
+  while (!stop_) {
     zmq::message_t topic;
     const auto recv_result_1 = sub_socket_.recv(topic, zmq::recv_flags::dontwait);
     if (!recv_result_1.has_value()) {
@@ -71,10 +84,8 @@ void ClientBackend::ReceiveMessages() {
       continue;
     }
     if (rec_msg.from() == name_) {
-      // Drop your own message
-      // This could e.g. be later used to mark the message as "delivered"
-      // I know it's not exactly as in the requirements - I could adjust that if needed
-      // TODO adjust the server? or just ask Joerg Engel!
+      // Drop the own message (that's coming from this client)
+      // This could e.g. be used to mark the message as "delivered"
       continue;
     }
     std::cout << "[" << name_ << "]: Received message \"" << rec_msg.message_text() << "\" on topic "
@@ -82,6 +93,7 @@ void ClientBackend::ReceiveMessages() {
     incoming_msgs_queue_->push(std::make_shared<std::tuple<const std::string, const std::string>>(
         std::make_tuple(rec_msg.from(), rec_msg.message_text())));
   }
+  std::cout << "ClientBackend: leave ReceiveMessages...\n";
 }
 
 // Sends the client heartbeat message to the server to signal that it's online.
@@ -116,18 +128,25 @@ zmq::recv_result_t ClientBackend::ReceiveActiveUsers() {
 }
 
 // Calls SendHeartbeat() and ReceiveActiveUsers() functions one after another in a loop.
-// Thread returns with an error message to stdout when no repsonse to the heartbeat is received from the Server.
+// Signals with an error message to stdout when no repsonse to the heartbeat is received from the Server.
 // Runs in a separate thread.
+// TODO there's still a bug that causes the entire client app to terminate when the Server stops.
 void ClientBackend::UpdateClientStatus() {
-  while (true) {
+  std::cout << "ClientBackend: enter UpdateClientStatus...\n";
+  while (!stop_) {
     SendHeartbeat();
     const auto recv_result = ReceiveActiveUsers();
     if (!recv_result.has_value()) {
       std::cout << "Error: Couldn't connect to the server (didn't receive a list of active users). Please make sure "
                    "it's up and running and restart this client!\n";
-      break;
+      termination_thread_ =
+          std::thread{&ClientBackend::Stop, this};  // TODO - would need to find a cleaner way for the stop
+      break;                                        // Break to leave this thread
     }
     std::this_thread::sleep_for(std::chrono::seconds(1));
   }
+
+  std::cout << "ClientBackend: leave UpdateClientStatus...\n";
+  stopped_ = true;
 }
 }  // namespace chat_app
