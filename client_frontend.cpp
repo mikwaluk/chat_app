@@ -9,7 +9,10 @@
 #include <QListWidget>
 
 namespace chat_app {
-    ChatWindow::ChatWindow(QWidget *parent) : QWidget(parent) {
+    ChatWindow::ChatWindow(std::queue<std::tuple<const std::string, const std::vector<std::string>>>* send_button_event_queue)
+    : QWidget(nullptr)
+    , event_queue_ {send_button_event_queue}
+    {
         setupUI();
     }
 
@@ -43,7 +46,7 @@ namespace chat_app {
 
         // Button to send message
         sendButton = new QPushButton("Send", this);
-        connect(sendButton, &QPushButton::clicked, this, &ChatWindow::sendMessage);
+        connect(sendButton, &QPushButton::clicked, this, &ChatWindow::sendButtonPressed);
         rightPanelLayout->addWidget(sendButton);
 
         mainLayout->addLayout(rightPanelLayout);
@@ -51,11 +54,19 @@ namespace chat_app {
         setLayout(mainLayout);
     }
 
-    void ChatWindow::sendMessage() {
+    void ChatWindow::sendButtonPressed() {
         QString message = messageInputField->toPlainText();
         // You can implement your message sending logic here
         // For now, just display the message in the chat window
         textDisplayArea->append("You: " + message);
+        std::vector<std::string> selectedUsers;
+        QList<QListWidgetItem *> selectedItems = userList->selectedItems();
+        for (QListWidgetItem *item : selectedItems) {
+            selectedUsers.push_back(item->text().toStdString());
+        }
+
+        // Print the selected users
+        event_queue_->push(std::make_tuple(message.toStdString(), selectedUsers));
         // Clear the message input field after sending
         messageInputField->clear();
     }

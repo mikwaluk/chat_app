@@ -1,6 +1,6 @@
 QT += widgets
 
-SOURCES += client_frontend.cpp test.pb.cc simple_client.cpp
+SOURCES += client_frontend.cpp test.pb.cc simple_client.cpp chat_controller.cpp
 
 # Define project name and version
 TARGET = client
@@ -18,7 +18,7 @@ LIBS += -luuid
 
 
 # Set the C++ standard
-CONFIG += c++11
+CONFIG += c++17
 
 # Specify any other configuration options if needed
 

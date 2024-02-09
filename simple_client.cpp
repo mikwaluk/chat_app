@@ -12,6 +12,7 @@ namespace po = boost::program_options;
 #include "simple_client.hpp"
 #include <algorithm>
 #include "client_frontend.hpp"
+#include "chat_controller.hpp"
 
 #include <QApplication>
 
@@ -102,6 +103,21 @@ namespace chat_app {
     std::cout << "Closing context\n";
     ctx_.close();
   }
+
+} // namespace chat_app
+
+void send_some_messages(chat_app::SimpleClient& client) {
+    auto empty_v = std::vector<std::string> {};
+    client.SendTextMessage("test1", empty_v);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    client.SendTextMessage("test2", empty_v);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    client.SendTextMessage("test3", empty_v);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    client.SendTextMessage("test4", empty_v);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    client.SendTextMessage("test5", empty_v);
+    client.Stop();
 }
 
 int main(int argc, char* argv[]) {
@@ -138,26 +154,16 @@ int main(int argc, char* argv[]) {
     }
     const std::string full_server_push_address = std::string("tcp://") + server_host + std::string(":") + server_port_to_push;
     const std::string full_server_sub_address = std::string("tcp://") + server_host + std::string(":") + server_port_to_subscribe;
-    auto client = chat_app::SimpleClient(user_name, full_server_push_address, full_server_sub_address);
 
-    auto empty_v = std::vector<std::string> {};
-    client.SendTextMessage("test1", empty_v);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    client.SendTextMessage("test2", empty_v);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    client.SendTextMessage("test3", empty_v);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    client.SendTextMessage("test4", empty_v);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    client.SendTextMessage("test5", empty_v);
-    client.Stop();
 
     QApplication app(argc, argv);
 
-    chat_app::ChatWindow chatWindow;
-    chatWindow.setWindowTitle("Group Chat");
-    chatWindow.resize(600, 400);
-    chatWindow.show();
+    auto chat_controller = chat_app::ChatController(user_name, full_server_push_address, full_server_sub_address);
+
+
+
+
+
 
     return app.exec();
 
