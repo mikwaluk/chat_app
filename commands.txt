@@ -1,0 +1,3 @@
+g++ -g simple_server.cpp test.pb.cc -lzmq -lprotobuf -o server
+g++ -g simple_client.cpp test.pb.cc -lzmq -lprotobuf -o server
+

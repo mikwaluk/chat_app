@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package test;
+
+message UUID {
+  string value = 1;
+  }
+
+message TestMsg {
+  string from = 1;
+  repeated string to = 2;
+  UUID uuid = 3;
+  oneof test_oneof {
+    string name = 4;
+    int32 number = 5;
+  }
+}
