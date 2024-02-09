@@ -20,7 +20,7 @@ The following diagram shows the involved components and their interactions on a 
 I decided to encapsulate everything into a Docker container, which can be built via docker-compose with the provided `docker-compose.yml` file.
 This way, I am sure that the project will build without any dependency issues related to the building environment, because the build envirionment is always the same (a fresh ubuntu 22.04 image).
 
-Before proceeding, you need to have Docker and docker-compose installed - please follow their official (installation manual)[https://docs.docker.com/engine/install/ubuntu/].
+Before proceeding, you need to have Docker and docker-compose installed - please follow their official [installation manual](https://docs.docker.com/engine/install/ubuntu/).
 
 If you have Docker installed, execute
 ```
