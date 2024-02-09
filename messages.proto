@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package test;
+package chat_app;
 
-message TestMsg {
+message DataMsg {
   string from = 1;
   repeated string to = 2;
   oneof test_oneof {

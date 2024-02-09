@@ -11,14 +11,14 @@
 
 #include "chat_client_app.hpp"
 #include "client_frontend.hpp"
-#include "test.pb.h"
+#include "messages.pb.h"
 #include "utils.hpp"
 
 namespace chat_app {
-ClientBackend::ClientBackend(const std::string& name, const std::string& push_addr, const std::string& sub_addr,
-                             const std::string& req_addr,
-                             std::queue<std::shared_ptr<std::tuple<const std::string, const std::string>>>* received_messages_queue,
-                             std::queue<std::shared_ptr<std::vector<std::string>>>* active_users_queue)
+ClientBackend::ClientBackend(
+    const std::string& name, const std::string& push_addr, const std::string& sub_addr, const std::string& req_addr,
+    std::queue<std::shared_ptr<std::tuple<const std::string, const std::string>>>* received_messages_queue,
+    std::queue<std::shared_ptr<std::vector<std::string>>>* active_users_queue)
     : push_socket_{ctx_, zmq::socket_type::push},
       sub_socket_{ctx_, zmq::socket_type::sub},
       req_socket_{ctx_, zmq::socket_type::req},
@@ -37,7 +37,7 @@ ClientBackend::ClientBackend(const std::string& name, const std::string& push_ad
 
 // Sends the given text message to the given group of recipients.
 void ClientBackend::SendTextMessage(const std::string& text, const std::vector<std::string>& recipients) {
-  auto msg = test::TestMsg();
+  auto msg = DataMsg();
   msg.set_from(name_);
   for (const auto& recipient : recipients) {
     msg.add_to(recipient);
@@ -64,8 +64,8 @@ void ClientBackend::ReceiveMessages() {
                 << "\n";
       continue;
     }
-    test::TestMsg rec_msg;
-    const auto recv_result_2 = utils::ReceiveProtobufMessage(sub_socket_, rec_msg , zmq::recv_flags::dontwait);
+    DataMsg rec_msg;
+    const auto recv_result_2 = utils::ReceiveProtobufMessage(sub_socket_, rec_msg, zmq::recv_flags::dontwait);
     if (!recv_result_2.has_value()) {
       std::cout << "Error - expected to receive something after the topic!\n";
       continue;
@@ -79,7 +79,8 @@ void ClientBackend::ReceiveMessages() {
     }
     std::cout << "[" << name_ << "]: Received message \"" << rec_msg.message_text() << "\" on topic "
               << topic.to_string() << " from " << rec_msg.from() << "\n";
-    incoming_msgs_queue_->push(std::make_shared<std::tuple<const std::string, const std::string>>(std::make_tuple(rec_msg.from(), rec_msg.message_text())));
+    incoming_msgs_queue_->push(std::make_shared<std::tuple<const std::string, const std::string>>(
+        std::make_tuple(rec_msg.from(), rec_msg.message_text())));
   }
 }
 
@@ -87,7 +88,7 @@ void ClientBackend::ReceiveMessages() {
 // Returns the value of the req_socket_.send(heartbeat_msg) operation.
 // Must be called before ReceiveActiveUsers()
 zmq::send_result_t ClientBackend::SendHeartbeat() {
-  test::HeartbeatMsg msg{};
+  HeartbeatMsg msg{};
   msg.set_from(name_);
   return utils::SendProtobufMessage(req_socket_, msg);
 }
@@ -96,7 +97,7 @@ zmq::send_result_t ClientBackend::SendHeartbeat() {
 // and signals them to the Frontend via the active_users_queue_.
 // Must be called after SendHeartbeat() only if it returned a successful send result.
 zmq::recv_result_t ClientBackend::ReceiveActiveUsers() {
-  test::HeartbeatMsg rec_msg;
+  HeartbeatMsg rec_msg;
   const auto recv_result = utils::ReceiveProtobufMessage(req_socket_, rec_msg);
   if (recv_result.has_value()) {
     for (const auto& user : rec_msg.active_users()) {

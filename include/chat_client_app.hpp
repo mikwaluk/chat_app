@@ -6,7 +6,6 @@
 
 #include "client_backend.hpp"
 #include "client_frontend.hpp"
-#include "test.pb.h"
 
 namespace chat_app {
 

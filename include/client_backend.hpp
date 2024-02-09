@@ -5,8 +5,6 @@
 #include <thread>
 #include <zmq.hpp>
 
-#include "test.pb.h"
-
 namespace chat_app {
 // Handles the ZMQ communication with the Server;
 // Communicates with the Frontend via queues (incoming_msgs_queue_ and active_users_queue_).
