@@ -1,0 +1,15 @@
+version: "2.3"
+
+services:
+  chat_app:
+    image: mikolaj_walukiewicz_thales_assignment:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: host
+    ipc: host
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    environment:
+      - DISPLAY
+    command: tail -f /dev/null
