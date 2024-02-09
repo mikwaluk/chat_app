@@ -23,7 +23,6 @@ class UserManager : public std::thread {
   const std::chrono::milliseconds user_timeout_;
   std::chrono::milliseconds check_period_;
   std::map<std::string, std::chrono::time_point<std::chrono::system_clock>> user_activity_map_;
-  bool stop_;
   std::mutex mut;
   void RemoveInactiveUsers();
 };

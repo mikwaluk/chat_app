@@ -2,3 +2,5 @@ g++ -g simple_server.cpp test.pb.cc -lzmq -lprotobuf -o server
 g++ -g simple_client.cpp test.pb.cc -lzmq -lprotobuf -o server
 
 protoc -I=. --cpp_out=. ./test.proto
+
+g++ -g src/utils.cpp src/user_manager.cpp src/server.cpp src/test.pb.cc src/main_server.cpp -lzmq -lprotobuf -o server -lboost_program_options -Iinclude/

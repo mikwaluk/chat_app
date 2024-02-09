@@ -73,6 +73,7 @@ void ClientBackend::ReceiveMessages() {
     if (rec_msg.from() == name_) {
       // Drop your own message
       // This could e.g. be later used to mark the message as "delivered"
+      // I know it's not exactly as in the requirements - I could adjust that if needed
       // TODO adjust the server? or just ask Joerg Engel!
       continue;
     }
