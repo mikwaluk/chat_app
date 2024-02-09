@@ -2,16 +2,16 @@ syntax = "proto3";
 
 package test;
 
-message UUID {
-  string value = 1;
-  }
-
 message TestMsg {
   string from = 1;
   repeated string to = 2;
-  UUID uuid = 3;
   oneof test_oneof {
-    string name = 4;
-    int32 number = 5;
+    string message_text = 3;
+    // Other types of payload could be added here, e.g. images
   }
+}
+
+message HeartbeatMsg {
+  string from = 1;
+  repeated string active_users = 2;
 }

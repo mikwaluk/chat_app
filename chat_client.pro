@@ -1,20 +1,15 @@
 QT += widgets
 
-SOURCES += client_frontend.cpp test.pb.cc simple_client.cpp chat_controller.cpp
+SOURCES += client_frontend.cpp test.pb.cc client_backend.cpp chat_client_app.cpp
 
 # Define project name and version
 TARGET = client
 VERSION = 1.0
 
-# Tell qmake where to find header files
-INCLUDEPATH += /path/to/your/protobuf/include
-INCLUDEPATH += /path/to/your/zmq/include
-
 # Tell qmake where to find library files
 LIBS += -lprotobuf
 LIBS += -lzmq
 LIBS += -lboost_program_options
-LIBS += -luuid
 
 
 # Set the C++ standard

@@ -12,16 +12,16 @@
 
 namespace chat_app {
 
-    class ChatWindow : public QWidget {
+    class ClientFrontend : public QWidget {
     public:
-        ChatWindow(std::queue<std::tuple<const std::string, const std::vector<std::string>>>* send_button_event_queue);
-
+        ClientFrontend(std::queue<std::tuple<const std::string, const std::vector<std::string>>>* send_button_event_queue);
+        void DisplayNewMessage(const std::string& author, const std::string& new_msg);
+        void UpdateActiveUsersList(const std::shared_ptr<std::vector<std::string>> active_users);
     private:
         void setupUI();
 
         // Slot to handle sending message when send button is clicked
-        void sendButtonPressed();
-
+        void SendButtonClicked();
         QListWidget *userList;
         QTextEdit *textDisplayArea;
         QTextEdit *messageInputField;
