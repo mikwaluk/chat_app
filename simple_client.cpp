@@ -11,6 +11,18 @@
 #include "test.pb.h"
 namespace po = boost::program_options;
 
+#include <algorithm>
+
+static inline bool is_not_alnum_space(const char c)
+{
+    return !(isalnum(c) || (c == '_') || (c == '-'));
+}
+
+bool string_is_valid(const std::string &str)
+{
+    return find_if(str.begin(), str.end(), is_not_alnum_space) == str.end();
+}
+
 class SimpleClient {
   private:
   zmq::context_t ctx_;
@@ -121,6 +133,14 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     po::notify(vm);
+    if (!string_is_valid(user_name)) {
+      std::cout << "Username must contain only alphanumeric characters, dashes or underscores!\n";
+      return 1;
+    }
+    if (user_name == std::string("all")) {
+      std::cout << "The user name must not be \"all\"\n";
+      return 1;
+    }
     const std::string full_server_push_address = std::string("tcp://") + server_host + std::string(":") + server_port_to_push;
     const std::string full_server_sub_address = std::string("tcp://") + server_host + std::string(":") + server_port_to_subscribe;
     auto client = SimpleClient(user_name, full_server_push_address, full_server_sub_address);
