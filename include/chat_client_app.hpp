@@ -23,7 +23,7 @@ class ChatClientApp {
   void HandleActiveUsers();
 
   std::queue<std::tuple<const std::string, const std::vector<std::string>>> outgoing_messages_queue_;
-  std::queue<std::tuple<const std::string, const std::string>> incoming_messages_queue_;
+  std::queue<std::shared_ptr<std::tuple<const std::string, const std::string>>> incoming_messages_queue_;
   std::queue<std::shared_ptr<std::vector<std::string>>> active_users_queue_;
 
   ClientFrontend client_frontend_;

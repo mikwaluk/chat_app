@@ -50,8 +50,8 @@ void ChatClientApp::HandleIncomingMessages() {
   while (true) {
     if (!incoming_messages_queue_.empty()) {
       const auto tuple = incoming_messages_queue_.front();
-      const auto msg_author = std::get<0>(tuple);
-      const auto msg_text = std::get<1>(tuple);
+      const auto msg_author = std::get<0>(*tuple);
+      const auto msg_text = std::get<1>(*tuple);
       client_frontend_.DisplayNewMessage(msg_author, msg_text);
       incoming_messages_queue_.pop();
     } else {

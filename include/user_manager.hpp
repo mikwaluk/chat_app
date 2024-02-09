@@ -9,6 +9,9 @@
 
 namespace chat_app {
 
+// Maintains a list (a map) of active users, monitoring their timeouts.
+// Whenever a timeout is reached, the user is removed from the list (map).
+// Whenever a heartbeat is received, the corresponding user entry is reset.
 class UserManager : public std::thread {
  public:
   UserManager(std::chrono::milliseconds user_timeout = std::chrono::milliseconds{1000},
@@ -23,8 +26,6 @@ class UserManager : public std::thread {
   bool stop_;
   std::mutex mut;
   void RemoveInactiveUsers();
-
-  void Stop();
 };
 }  // namespace chat_app
 #endif  // USER_MANAGER_HPP_

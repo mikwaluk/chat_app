@@ -5,14 +5,9 @@
 #include <string>
 
 #include "chat_client_app.hpp"
+#include "utils.hpp"
 
 namespace po = boost::program_options;
-
-static inline bool is_not_alnum_space(const char c) { return !(isalnum(c) || (c == '_') || (c == '-')); }
-
-bool string_is_valid(const std::string& str) {
-  return find_if(str.begin(), str.end(), is_not_alnum_space) == str.end();
-}
 
 int main(int argc, char* argv[]) {
   std::string server_port_to_push;
@@ -39,7 +34,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   po::notify(vm);
-  if (!string_is_valid(user_name)) {
+  if (!chat_app::utils::IsValidUsername(user_name)) {
     std::cout << "Username must contain only alphanumeric characters, dashes or underscores!\n";
     return 1;
   }

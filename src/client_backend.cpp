@@ -12,11 +12,12 @@
 #include "chat_client_app.hpp"
 #include "client_frontend.hpp"
 #include "test.pb.h"
+#include "utils.hpp"
 
 namespace chat_app {
 ClientBackend::ClientBackend(const std::string& name, const std::string& push_addr, const std::string& sub_addr,
                              const std::string& req_addr,
-                             std::queue<std::tuple<const std::string, const std::string>>* received_messages_queue,
+                             std::queue<std::shared_ptr<std::tuple<const std::string, const std::string>>>* received_messages_queue,
                              std::queue<std::shared_ptr<std::vector<std::string>>>* active_users_queue)
     : push_socket_{ctx_, zmq::socket_type::push},
       sub_socket_{ctx_, zmq::socket_type::sub},
@@ -34,16 +35,7 @@ ClientBackend::ClientBackend(const std::string& name, const std::string& push_ad
   heartbeat_thread_ = std::thread{&ClientBackend::UpdateClientStatus, this};
 }
 
-zmq::send_result_t ClientBackend::SendProtobufMessage(zmq::socket_t& socket, const google::protobuf::Message& msg,
-                                                      zmq::send_flags flags) {
-  std::string serialized_output;
-  msg.SerializeToString(&serialized_output);
-  zmq::message_t zmq_msg{serialized_output.size()};
-  memcpy((void*)zmq_msg.data(), serialized_output.c_str(), serialized_output.size());
-  const auto result = socket.send(zmq_msg, flags);
-  return result;
-}
-
+// Sends the given text message to the given group of recipients.
 void ClientBackend::SendTextMessage(const std::string& text, const std::vector<std::string>& recipients) {
   auto msg = test::TestMsg();
   msg.set_from(name_);
@@ -52,10 +44,11 @@ void ClientBackend::SendTextMessage(const std::string& text, const std::vector<s
   }
   msg.set_message_text(text);
 
-  const auto result = SendProtobufMessage(push_socket_, msg);
+  const auto result = utils::SendProtobufMessage(push_socket_, msg);
   std::cout << "Send result: " << result.value() << "\n";
 }
 
+// Receives incoming text messages via the sub_socket_.
 void ClientBackend::ReceiveMessages() {
   std::cout << "Start receiving...\n";
   while (true) {
@@ -71,14 +64,12 @@ void ClientBackend::ReceiveMessages() {
                 << "\n";
       continue;
     }
-    zmq::message_t rec_data;
-    const auto recv_result_2 = sub_socket_.recv(rec_data, zmq::recv_flags::dontwait);
+    test::TestMsg rec_msg;
+    const auto recv_result_2 = utils::ReceiveProtobufMessage(sub_socket_, rec_msg , zmq::recv_flags::dontwait);
     if (!recv_result_2.has_value()) {
       std::cout << "Error - expected to receive something after the topic!\n";
       continue;
     }
-    test::TestMsg rec_msg;
-    rec_msg.ParseFromArray(rec_data.data(), rec_data.size());
     if (rec_msg.from() == name_) {
       // Drop your own message
       // This could e.g. be later used to mark the message as "delivered"
@@ -87,44 +78,51 @@ void ClientBackend::ReceiveMessages() {
     }
     std::cout << "[" << name_ << "]: Received message \"" << rec_msg.message_text() << "\" on topic "
               << topic.to_string() << " from " << rec_msg.from() << "\n";
-    incoming_msgs_queue_->push(std::make_tuple(rec_msg.from(), rec_msg.message_text()));
+    incoming_msgs_queue_->push(std::make_shared<std::tuple<const std::string, const std::string>>(std::make_tuple(rec_msg.from(), rec_msg.message_text())));
   }
 }
 
+// Sends the client heartbeat message to the server to signal that it's online.
+// Returns the value of the req_socket_.send(heartbeat_msg) operation.
+// Must be called before ReceiveActiveUsers()
 zmq::send_result_t ClientBackend::SendHeartbeat() {
   test::HeartbeatMsg msg{};
   msg.set_from(name_);
-  return SendProtobufMessage(req_socket_, msg);
+  return utils::SendProtobufMessage(req_socket_, msg);
 }
 
+// Receives (in a response to the heartbeat sent) a list of active users
+// and signals them to the Frontend via the active_users_queue_.
+// Must be called after SendHeartbeat() only if it returned a successful send result.
 zmq::recv_result_t ClientBackend::ReceiveActiveUsers() {
-  zmq::message_t rec_data;
-  const auto recv_result = req_socket_.recv(rec_data);
+  test::HeartbeatMsg rec_msg;
+  const auto recv_result = utils::ReceiveProtobufMessage(req_socket_, rec_msg);
   if (recv_result.has_value()) {
-    test::HeartbeatMsg rec_msg;
-    rec_msg.ParseFromArray(rec_data.data(), rec_data.size());
-
     for (const auto& user : rec_msg.active_users()) {
-      std::cout << user << "\n";  // TODO use some logging library
+      std::cout << user << ", ";
     }
+    std::cout << "\n";
     auto active_users = std::make_shared<std::vector<std::string>>();
     for (const auto& user : rec_msg.active_users()) {
       active_users->push_back(user);
     }
     active_users_queue_->push(active_users);
   } else {
-    std::cout << "No heartbeat received!\n";
+    std::cout << "Warning: No response to heartbeat received!\n";
   }
   return recv_result;
 }
 
+// Calls SendHeartbeat() and ReceiveActiveUsers() functions one after another in a loop.
+// Thread returns with an error message to stdout when no repsonse to the heartbeat is received from the Server.
+// Runs in a separate thread.
 void ClientBackend::UpdateClientStatus() {
   while (true) {
     SendHeartbeat();
     const auto recv_result = ReceiveActiveUsers();
     if (!recv_result.has_value()) {
       std::cout << "Error: Couldn't connect to the server (didn't receive a list of active users). Please make sure "
-                   "it's up and running!\n";
+                   "it's up and running and restart this client!\n";
       break;
     }
     std::this_thread::sleep_for(std::chrono::seconds(1));
