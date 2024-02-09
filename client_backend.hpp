@@ -21,20 +21,33 @@ namespace chat_app {
         zmq::socket_t sub_socket_;
         zmq::socket_t req_socket_;
         const std::string name_;
-        bool stop_;
         std::queue<std::tuple<const std::string, const std::string>>* incoming_msgs_queue_;
         std::queue<std::shared_ptr<std::vector<std::string>>>* active_users_queue_;
     public:
-    std::thread t1; // TODO do they even need to be members?
-    std::thread t2; // TODO do they even need to be members?
+    std::thread msg_subscription_thread_; // TODO do they even need to be members?
+    std::thread heartbeat_thread_; // TODO do they even need to be members?
     ClientBackend(const std::string& name, const std::string& push_addr, const std::string& sub_addr, const std::string& req_addr, std::queue<std::tuple<const std::string, const std::string>>* received_messages_queue, std::queue<std::shared_ptr<std::vector<std::string>>>* active_users_queue);
     
     // Sends the given text message to the given group of recipients
     void SendTextMessage(const std::string& text, const std::vector<std::string>& recipients);
     // Receives incoming text messages via the sub_socket_
     void ReceiveMessages();
-    void SendHeartbeat();
-    void Stop();
+
+    // Calls SendHeartbeat() and ReceiveActiveUsers() functions one after another in a loop.
+    // Should be run in a separate thread.
+    void UpdateClientStatus();
+
+    // Sends the client heartbeat message to the server to signal that it's online.
+    // Returns the value of the req_socket_.send(heartbeat_msg) operation.
+    // Must be called before ReceiveActiveUsers()
+    zmq::send_result_t SendHeartbeat();
+
+    // Receives (in a response to the heartbeat sent) a list of active users
+    // and signals them to the Frontend via the active_users_queue_.
+    // Must be called after SendHeartbeat() only if it returned a successful send result.
+    zmq::recv_result_t ReceiveActiveUsers();
+    zmq::send_result_t SendProtobufMessage(zmq::socket_t& socket, const google::protobuf::Message& msg, zmq::send_flags flags = zmq::send_flags::none);
+
     };
 }
 #endif  // CLIENT_BACKEND_HPP_

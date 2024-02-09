@@ -1,6 +1,6 @@
 QT += widgets
 
-SOURCES += client_frontend.cpp test.pb.cc client_backend.cpp chat_client_app.cpp
+SOURCES += client_frontend.cpp test.pb.cc client_backend.cpp chat_client_app.cpp main.cpp
 
 # Define project name and version
 TARGET = client

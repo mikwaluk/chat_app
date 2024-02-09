@@ -71,7 +71,6 @@ namespace chat_app {
 
       void ChatClientApp::Stop() {
         stop_ = true;
-        client_backend_.Stop();
         outgoing_msg_handler_.join();
         incoming_msg_handler_.join();
       }
