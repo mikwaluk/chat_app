@@ -48,12 +48,7 @@ There are 2 resulting executable binaries: `server` and `client`. They are copie
 For details about the build process, you can look up the `Dockerfile`.
 
 ### Running
-I have tested the execution of the binaries in docker on my laptop running Ubuntu 20.04, but any other Linux distribution, especially Ubuntu, should probably work as well.
-I cannot guarantee it to work under Windows without adjustments to the docker-compose file, though.
-
-Since the Client requires access to the monitor, the docker-compose file shares the required display data with the container.
-
-After that, you can start the container with `docker-compose up` executed in the repo root.
+After a successful build, you can start the container with `docker-compose up` executed in the repo root.
 
 Verify with `docker ps` that the container is actually running:
 ```
@@ -73,6 +68,7 @@ root@mikolaj-laptop:/home/root#
 Feel free to open multiple shells in the terminal, to start multiple client applications.
 There must be exactly one server application running in order for the entire system to work properly.
 
+#### Starting the Server
 Now you can start the server simply by executing the `server` command. You should see some output:
 ```
 root@mikolaj-laptop:/home/root# server
@@ -82,6 +78,7 @@ Start receiving...
 
 The default server IP and ports are set and don't need to be adjusted for the example to work (running the server/client with `-h` will display all available options and their default values).
 
+#### Starting the Client(s)
 For example, executing the following command should produce a similar output. And you should see the client's Frontend appear.
 ```
 root@mikolaj-laptop:/home/root# client -u test_user_1
@@ -111,6 +108,12 @@ In addition, you can select any number of names from the list of active users an
 Also, under [this link](https://drive.google.com/file/d/1NRkTbV-TAqKmMXRNwKcPsrKoO8sZIQOM/view?usp=sharing) you can find an example video presenting the app in operation.
 The online quality is pretty bad, but if you download it, the letters will be much more readible.
 
+#### Supported environment
+I have tested the execution of the binaries in docker on my laptop running Ubuntu 20.04 (and on a fresh Ubuntu 22.04 VM), but any other Linux distribution, especially Ubuntu, should probably work as well.
+I cannot guarantee it to work under Windows without adjustments to the docker-compose file, though.
+
+Since the Client requires access to the display, the docker-compose file shares the required display data with the container.
+
 ## Known bugs
 The biggest issue that I didn't have enough time to resolve is that the connected clients die when the server stops during operation.
 
@@ -120,6 +123,7 @@ The biggest issue that I didn't have enough time to resolve is that the connecte
 3. A few inconsitencies - e.g. within one class, 2 queues store shared_ptrs to objects and the third one stores the objects directly. A result of lack of time for proper refactoring/implementation.
 4. No logging used - just normal standard output prints. If I had more time, I would have included a proper logging library and allow the user to set the logging level.
 5. Some functions receive too many arguments, especially the constructors - if I had more time for refactoring, I would have used the Parameter Objects pattern for that.
+6. Ideally, I would have created one CMake project and build the two targets with it, but I wasn't sure how to do it quickly having Qt.
 
 
 ## Troubleshooting
