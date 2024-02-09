@@ -29,9 +29,19 @@ class SimpleServer {
         for (int i = 0; i < 10; i++) {
             zmq::message_t t;
             pull_socket.recv(t);
+            std::cout << "somesing\n";
             test::TestMsg rec_data;
             rec_data.ParseFromArray(t.data(), t.size());
-            std::cout << rec_data.uuid().value() << " Received \"" << rec_data.name() << "\" from " << rec_data.from() << " to " << rec_data.to().at(0) << "\n";
+            std::cout << rec_data.uuid().value() << " Received \"" << rec_data.name() << "\" from " << rec_data.from() << " to ";
+            if (rec_data.to().size() > 0) {
+                for (const auto& recipient : rec_data.to()) {
+                    std::cout << recipient << ",";
+                }
+            }
+            else {
+                std::cout << "all";
+            }
+            std::cout << "\n";
         }
     }
    //const std::string_view m = "Hello, world";
