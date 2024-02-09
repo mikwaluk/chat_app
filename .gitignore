@@ -4,3 +4,4 @@ Makefile
 .qmake.stash
 *.cc
 build/
+*.pb.h

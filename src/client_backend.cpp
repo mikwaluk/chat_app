@@ -9,7 +9,7 @@
 #include <vector>
 #include <zmq.hpp>
 
-#include "chat_client_app.hpp"
+#include "chat_client_controller.hpp"
 #include "client_frontend.hpp"
 #include "messages.pb.h"
 #include "utils.hpp"

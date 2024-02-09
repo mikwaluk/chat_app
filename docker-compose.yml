@@ -2,7 +2,7 @@ version: "2.3"
 
 services:
   chat_app:
-    image: mikolaj_walukiewicz_thales_assignment:latest
+    image: chat_app:latest
     build:
       context: .
       dockerfile: Dockerfile
