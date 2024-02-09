@@ -58,8 +58,8 @@ After that, you can start the container with `docker-compose up` executed in the
 Verify with `docker ps` that the container is actually running:
 ```
 ❯ docker ps
-CONTAINER ID   IMAGE                                                                                                    COMMAND                  CREATED        STATUS          PORTS     NAMES
-99b2cb527c18   chat_app:latest                                                             "tail -f /dev/null"      2 hours ago    Up 11 minutes                  chat_container_1
+CONTAINER ID   IMAGE             COMMAND                  CREATED        STATUS          PORTS     NAMES
+99b2cb527c18   chat_app:latest   "tail -f /dev/null"      2 hours ago    Up 11 minutes             chat_container_1
 
 ```
 
@@ -67,7 +67,7 @@ Now you can enter the container by executing `docker exec -it <container_name> /
 You should now be inside the container's shell and see something like
 ```
 ❯ docker exec -it chat_container_1 /bin/bash
-nonroot@mikolaj-laptop:~/chat_app$ 
+root@mikolaj-laptop:/home/root#
 ```
 
 Feel free to open multiple shells in the terminal, to start multiple client applications.
@@ -75,16 +75,16 @@ There must be exactly one server application running in order for the entire sys
 
 Now you can start the server simply by executing the `server` command. You should see some output:
 ```
-nonroot@mikolaj-laptop:~/chat_app$ server
+root@mikolaj-laptop:/home/root# server
 Start waiting for heartbeats...
 Start receiving...
 ```
 
-The default server IP and ports are set and don't need to be adjusted for the example to work.
+The default server IP and ports are set and don't need to be adjusted for the example to work (running the server/client with `-h` will display all available options and their default values).
 
-For example, executing the following command should produce a similar output. And you should see the Frontend appear.
+For example, executing the following command should produce a similar output. And you should see the client's Frontend appear.
 ```
-root@mikolaj-laptop:/home/thales/build# client -u test_user_1
+root@mikolaj-laptop:/home/root# client -u test_user_1
 QStandardPaths: XDG_RUNTIME_DIR not set, defaulting to '/tmp/runtime-root'
 ChatClientApp: HandleIncomingMessages thread started
 ChatClientApp: MonitorConnection thread started
@@ -114,13 +114,12 @@ The online quality is pretty bad, but if you download it, the letters will be mu
 ## Known bugs
 The biggest issue that I didn't have enough time to resolve is that the connected clients die when the server stops during operation.
 
-Other than that, sometimes when you press "disconnect" too quickly, the client crashes.
-
-## Other issues
+## Other issues/remarks
 1. There are magic numbers present in the code (and raw string literals) which ideally should become constexpr and be defined somewhere, but there wasn't enough time for this.
 2. There are no tests written.
 3. A few inconsitencies - e.g. within one class, 2 queues store shared_ptrs to objects and the third one stores the objects directly. A result of lack of time for proper refactoring/implementation.
 4. No logging used - just normal standard output prints. If I had more time, I would have included a proper logging library and allow the user to set the logging level.
+5. Some functions receive too many arguments, especially the constructors - if I had more time for refactoring, I would have used the Parameter Objects pattern for that.
 
 
 ## Troubleshooting
@@ -136,4 +135,6 @@ you might need to run
 ```
 xhost +local:
 ```
-on your machine's terminal to allow the container to access the display.
+on your machine's terminal to allow the container to access the display (tested on Ubuntu 20.04 and 22.04).
+
+It doesn't presist through reboots, so you'd need to repeat it every time when you start your computer and want to test the app.

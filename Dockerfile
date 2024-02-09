@@ -4,6 +4,7 @@ RUN apt-get update
 RUN apt-get install -y vim git build-essential
 RUN apt-get install -y cmake
 
+# Install the latest libzmq
 WORKDIR /home/root/git_installs
 RUN git clone https://github.com/zeromq/libzmq.git /home/root/git_installs/libzmq
 RUN ls
@@ -12,11 +13,13 @@ WORKDIR /home/root/git_installs/libzmq/build
 RUN pwd
 RUN cmake .. && make install
 
+# Install the latest cppzmq lib
 RUN git clone https://github.com/zeromq/cppzmq.git /home/root/git_installs/cppzmq
 WORKDIR /home/root/git_installs/cppzmq/build
 
 RUN cmake .. && make install
 
+# Build the actual app
 WORKDIR /home/root
 RUN ls
 RUN git clone https://github.com/mikwaluk/chat_app.git
@@ -32,4 +35,5 @@ RUN qmake .. && make
 WORKDIR /home/root/chat_app
 RUN g++ -g src/utils.cpp src/user_manager.cpp src/server.cpp src/messages.pb.cc src/main_server.cpp -lzmq -lprotobuf -o build/server -lboost_program_options -Iinclude/
 
+# Move the binaries to /usr/bin for easier execution
 RUN cp build/client build/server /usr/bin

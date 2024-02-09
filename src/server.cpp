@@ -24,6 +24,7 @@ Server::Server(const std::string& pull_addr, const std::string& pub_addr, const 
 // It extract the recipients from the protobuf and depending whether there are recipients specified or not,
 // it either publishes a single message to the "/all/" topic, or sends a list of separate messages
 // to single recipients' topics.
+// The topics are specified using the multipart send feature of ZMQ.
 void Server::ReceiveMessages() {
   std::cout << "Start receiving...\n";
   while (true) {

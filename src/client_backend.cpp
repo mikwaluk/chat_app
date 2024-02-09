@@ -37,6 +37,8 @@ ClientBackend::ClientBackend(
   heartbeat_thread_ = std::thread{&ClientBackend::UpdateClientStatus, this};
 }
 
+
+// Stops both threads running in the background
 void ClientBackend::Stop() {
   std::cout << "Entering Stop\n";
   stop_ = true;
@@ -61,10 +63,13 @@ void ClientBackend::SendTextMessage(const std::string& text, const std::vector<s
   std::cout << "Send result: " << result.value() << "\n";
 }
 
-// Receives incoming text messages via the sub_socket_.
+// Receives incoming text messages via the sub_socket_ and forwards them to the incoming_msgs_queue_.
+// It filters out "own" messages, i.e. those that have the current user's name in the "from" field.
 void ClientBackend::ReceiveMessages() {
   std::cout << "ClientBackend: enter ReceiveMessages...\n";
   while (!stop_) {
+    // Perform a multipart receive.
+    // The first part is supposed be the ZMQ topic, and the second - the actual message.
     zmq::message_t topic;
     const auto recv_result_1 = sub_socket_.recv(topic, zmq::recv_flags::dontwait);
     if (!recv_result_1.has_value()) {
