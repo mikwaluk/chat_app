@@ -16,13 +16,21 @@ class SimpleClient {
   zmq::context_t ctx_;
   zmq::socket_t push_socket_;
   zmq::socket_t sub_socket_;
-  std::string name_;
+  const std::string name_;
+  bool stop_;
   public:
-  SimpleClient(const std::string& name, const std::string& push_addr, const std::string& sub_addr): push_socket_ {ctx_, zmq::socket_type::push}, sub_socket_ {ctx_, zmq::socket_type::sub}, name_ {name} {
+  std::thread t1;
+  SimpleClient(const std::string& name, const std::string& push_addr, const std::string& sub_addr)
+    : push_socket_ {ctx_, zmq::socket_type::push}
+    , sub_socket_ {ctx_, zmq::socket_type::sub}
+    , name_ {name}
+    , stop_ {false}
+  {
     push_socket_.connect(push_addr);
-    sub_socket_.set(zmq::sockopt::subscribe, "/all");
-    sub_socket_.set(zmq::sockopt::subscribe, "/" + name_);
+    sub_socket_.set(zmq::sockopt::subscribe, "/all/");
+    sub_socket_.set(zmq::sockopt::subscribe, ("/" + name_ + "/").c_str());
     sub_socket_.connect(sub_addr);
+    t1 = std::thread(&SimpleClient::ReceiveMessage, this);
   }
   void SendTextMessage(const std::string& text, const std::vector<std::string>& recipients) {
     auto msg = test::TestMsg();
@@ -47,7 +55,46 @@ class SimpleClient {
     const auto result = push_socket_.send(request, zmq::send_flags::none);
     std::cout << "Send result: " << result.value() << "\n";
   }
-  
+    void ReceiveMessage()
+  {
+      std::cout << "Start receiving...\n";
+      while (!stop_) {
+          zmq::message_t topic;
+          zmq::recv_result_t recv_result = sub_socket_.recv(topic, zmq::recv_flags::dontwait);
+          if (!recv_result.has_value()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            continue;
+          }
+          int64_t more = sub_socket_.get(zmq::sockopt::rcvmore);
+          if (more != 1) {
+            std::cout << "Error receiving mesage - unexpected number of remaining message parts. Expected 1, got " << more << "\n";
+            continue;
+          }
+          zmq::message_t rec_data;
+          sub_socket_.recv(rec_data);
+          test::TestMsg rec_msg;
+          rec_msg.ParseFromArray(rec_data.data(), rec_data.size());
+          if (rec_msg.from() == name_) {
+            // Drop your own message
+            continue;
+          }
+          std::cout << "[" << name_ << "]: Received message \"" << rec_msg.name() << "\" on topic " << topic.to_string() << " from " << rec_msg.from() << "\n";
+      }
+  }
+  void stop() {
+    std::cout << "Stopping...\n";
+    stop_ = true;
+    t1.join();
+    std::cout << "Stopped!\n";
+  }
+  ~SimpleClient() {
+    std::cout << "Closing sub socket\n";
+    sub_socket_.close();
+    std::cout << "Closing push socket\n";
+    push_socket_.close();
+    std::cout << "Closing context\n";
+    ctx_.close();
+  }
 };
 
 int main(int argc, char* argv[]) {
@@ -80,5 +127,14 @@ int main(int argc, char* argv[]) {
 
     auto empty_v = std::vector<std::string> {};
     client.SendTextMessage("test1", empty_v);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    client.SendTextMessage("test2", empty_v);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    client.SendTextMessage("test3", empty_v);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    client.SendTextMessage("test4", empty_v);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    client.SendTextMessage("test5", empty_v);
+    client.stop();
 
 }

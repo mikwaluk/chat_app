@@ -23,25 +23,34 @@ class SimpleServer {
     zmq::socket_t pub_socket;
 
     public:
-    void receiveMessage(const std::string& msg)
+    void receiveMessage()
     {
         std::cout << "Start receiving...\n";
         for (int i = 0; i < 10; i++) {
             zmq::message_t t;
             pull_socket.recv(t);
-            std::cout << "somesing\n";
             test::TestMsg rec_data;
             rec_data.ParseFromArray(t.data(), t.size());
             std::cout << rec_data.uuid().value() << " Received \"" << rec_data.name() << "\" from " << rec_data.from() << " to ";
             if (rec_data.to().size() > 0) {
                 for (const auto& recipient : rec_data.to()) {
                     std::cout << recipient << ",";
+                    const auto recipient_namespace = "/" + recipient + "/";
+                    std::cout << "Recipient: " << recipient_namespace << "\n";
+                    auto ns_message = zmq::message_t((void*)recipient_namespace.c_str(), recipient_namespace.length());
+                    pub_socket.send(ns_message, zmq::send_flags::sndmore);
+
                 }
             }
             else {
                 std::cout << "all";
+                const auto recipient_namespace = std::string {"/all/"};
+                std::cout << "Recipient: " << recipient_namespace << "\n";
+                auto ns_message = zmq::message_t((void*)recipient_namespace.c_str(), recipient_namespace.length());
+                pub_socket.send(ns_message, zmq::send_flags::sndmore);
             }
             std::cout << "\n";
+            pub_socket.send(t, zmq::send_flags::none);
         }
     }
    //const std::string_view m = "Hello, world";
@@ -58,7 +67,7 @@ class SimpleServer {
         std::string server_pub_socket_address = std::string("tcp://") + server_host + std::string(":") + server_pub_port;
         pull_socket.bind(server_pull_socket_address);
         pub_socket.bind(server_pub_socket_address);
-        std::thread t1(&SimpleServer::receiveMessage, this, std::string("Test"));
+        std::thread t1(&SimpleServer::receiveMessage, this);
         t1.join();
    }
    ~SimpleServer() { std::cout << "\nDestructor executed"; }
